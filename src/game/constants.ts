@@ -19,7 +19,7 @@ import type {
 export const W = 960;
 export const H = 540;
 export const G = 1500;
-export const SPEED = 190;
+export const SPEED = 170;
 export const JUMP = 560;
 export const ROLL = 350;
 export const RDUR = 0.42;
@@ -70,7 +70,7 @@ export const BUILDS: Record<BuildId, BuildDef> = {
     id: 'guerreiro',
     name: 'Guerreiro',
     subtitle: 'Lâmina & Bastilha',
-    desc: 'Vigor elevado, golpes corpo a corpo brutais e firmeza para quebrar posturas e aparar horrores.',
+    desc: 'Vigor elevado, golpes corpo a corpo brutais e firmeza para quebrar posturas e punir aberturas.',
     specialName: 'Ciclone da Vigília',
     specialDesc: 'Gira com lâminas espectrais invulneráveis, cortando tudo ao redor.',
     starterWeapon: 'espada_vigilia',

@@ -44,7 +44,14 @@ export const SHARDS: Point[] = [];
 
 for (let k = 0; k < NZ; k++) {
   const shift = <T extends { x: number }>(arr: T[]) => arr.map((s) => ({ ...s, x: s.x + k * ZONE }));
-  SOL.push(...shift(SOL0));
+  const walk: SolidSeg[] = [
+    {x:0,w:2480,y:440},
+    ...Array.from({length:12},(_,i)=>({x:2480+i*10,w:10,y:435-i*5})),
+    {x:2600,w:1700,y:380},
+    ...Array.from({length:12},(_,i)=>({x:4300+i*10,w:10,y:385+i*5})),
+    {x:4420,w:2740,y:440},
+  ];
+  SOL.push(...shift(walk));
   PLAT.push(...shift(PLAT0));
   BRAZ.push(...shift(BRAZ0));
   SHARDS.push(...shift(SHARD0));
@@ -55,7 +62,7 @@ export const LOOT_SPAWNS: Omit<LootChest, 'opened'>[] = [
   { id: 'w_machado', x: 985, y: 345, zone: 0, kind: 'weapon', itemId: 'machado_velmora' },
   { id: 'w_besta', x: 2845, y: 285, zone: 0, kind: 'weapon', itemId: 'besta_prata' },
   { id: 's_vigilia', x: 3780, y: 380, zone: 0, kind: 'shield', itemId: 2 },
-  { id: 'a_bastilha', x: 4380, y: 440, zone: 0, kind: 'armor', itemId: 'placa_bastilha' },
+  { id: 'a_bastilha', x: 4460, y: 440, zone: 0, kind: 'armor', itemId: 'placa_bastilha' },
 
   // Região 1 — Catedral Submersa
   { id: 'w_foice', x: ZONE + 985, y: 345, zone: 1, kind: 'weapon', itemId: 'foice_lunar' },
@@ -94,13 +101,13 @@ export const LOOT_SPAWNS: Omit<LootChest, 'opened'>[] = [
 
 export const ZONE_NAMES = [
   'Velmora · Ruas da Meia-Noite',
-  'Catedral Submersa',
+  'Esgotos da Catedral',
   'Salão da Coroa Velada',
   'Lago da Névoa Vazia',
   'Altar do Pesadelo Astral',
   'Bosque dos Enforcados',
   'Castelo de Cainhurst',
-  'Ossuário de Yahar’gul',
+  'Subsolos de Yahar’gul',
   'Câmara do Coro Celeste',
   'Sótão de Mergo · Lua Vermelha',
 ];
@@ -552,6 +559,11 @@ export function moveEntity(
 ) {
   const px = e.x;
   e.x += e.vx * dt;
+  // Climb shallow stair risers by walking; retain gravity on ledges and ladders.
+  if(e.onGround) {
+    const next = groundAt(e.x + Math.sign(e.vx)*e.hw);
+    if(next !== null && next < e.y && e.y-next <= 16) e.y=next;
+  }
   for (const s of SOL) {
     if (e.y > s.y + 0.5 && e.x + e.hw > s.x && e.x - e.hw < s.x + s.w) {
       if (px <= s.x) e.x = s.x - e.hw;

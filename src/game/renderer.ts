@@ -1,3 +1,4 @@
+import { drawRoutes, drawRouteHint, drawUnderground } from './routes';
 import { drawDepthBack, drawDepthFloor, drawDepthFront, drawRuins, drawPuzzleWorld, drawPuzzleHint } from './depth';
 import type { Breakable } from './expansion';
 import {
@@ -3328,6 +3329,8 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
     if (d.x > cam - 120 && d.x < cam + W + 120) drawDecor(ctx, d, time);
   }
 
+  drawUnderground(ctx, cam, time);
+
   // Ground
   const gTop = lerpHex(tA.groundTop, tB.groundTop, blend);
   const gBot = lerpHex(tA.groundBot, tB.groundBot, blend);
@@ -3375,6 +3378,7 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
   }
 
   drawDepthFloor(ctx, cam, zIdx, enemies, P);
+  drawRoutes(ctx, cam, P, S, time);
   drawRuins(ctx, cam, st.breakables, S, time);
   drawPuzzleWorld(ctx, cam, S, time);
 
@@ -4692,7 +4696,7 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
     }
   }
 
-  if(mode==='play' && !P.dead) drawPuzzleHint(ctx, P, S, isTouch);
+  if(mode==='play' && !P.dead) {drawPuzzleHint(ctx, P, S, isTouch);drawRouteHint(ctx,P,S,isTouch);}
 
   // Animated Region Transition Overlay (cinematic curtain sweep + region crest)
   if (st.zoneTrans && mode === 'play') {

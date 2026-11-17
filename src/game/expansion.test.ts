@@ -60,3 +60,22 @@ resumed.grantRelic('madre');assert(resumed.S.unlockedWeapons.includes(relicIds('
 resumed.setWeapon(relicIds('madre',1).weapon);assert.equal(resumed.look.weapon,relicIds('madre',1).weapon);
 resumed.save();const again:any=new FoxBorneEngine(canvas,cb);assert.equal(again.look.weapon,resumed.look.weapon);assert(again.S.unlockedWeapons.includes(relicIds('madre',0).weapon));
 console.log('PASS: 3 reachable puzzles over 5 cycles; all relics; legacy save migration; rewards once; destruction persistence; NG+ reset and retained equipment.');
+
+// Traversal regression: walk the complete ground both ways without jump input.
+const {moveEntity,PLAT,LOOT_SPAWNS} = await import('./world') as any;
+const {ROUTES,routeAvailable}=await import('./routes');
+for(const direction of [1,-1]) {
+ const actor={x:direction===1?40:71500,y:440,vx:direction*170,vy:0,hw:14,onGround:true};
+ for(let i=0;i<26000;i++)moveEntity(actor,1/60);
+ assert(direction===1?actor.x>71400:actor.x<100,'Full campaign terrain must be walkable in both directions');
+ assert(actor.y<=440,'No mandatory pits remain');
+}
+for(const platform of PLAT)assert(ROUTES.some(r=>r.kind==='ladder'&&r.y===platform.y&&r.x>=platform.x&&r.x<=platform.x+platform.w),'Every treasure platform needs a ladder');
+for(const chest of LOOT_SPAWNS)assert(Math.abs((groundAt(chest.x)??-999)-chest.y)<10||PLAT.some((p:any)=>chest.x>=p.x&&chest.x<=p.x+p.w&&chest.y===p.y),'All chests remain reachable');
+assert(!routeAvailable(ROUTES.find(r=>r.id==='catedral_a')!,Array(10).fill(false)));
+assert(routeAvailable(ROUTES.find(r=>r.id==='ruas_esgoto_a')!,Array(10).fill(false)));
+loaded.arena=-1;loaded.P.dead=false;loaded.P.statuses=[];
+for(const r of ROUTES){loaded.S.dead=Array(10).fill(true);loaded.P.x=r.x;loaded.P.y=r.y;assert(loaded.useRoute());loaded.updatePlayer(1.1);assert.equal(loaded.P.x,r.to.x);assert.equal(loaded.P.y,r.to.y);assert(!loaded.traversal);}
+loaded.P.st=1;loaded.P.state='free';loaded.startAttack(false,1);assert.equal(loaded.P.state,'free');loaded.startRoll(1);assert.equal(loaded.P.state,'free');
+assert(!Object.values((FoxBorneEngine as any).KEY_MAP).includes('jump'));assert(!Object.values((FoxBorneEngine as any).KEY_MAP).includes('block'));
+console.log('PASS: full ground route both directions; all ladders and chests reachable; bidirectional passages; boss locks; insufficient stamina blocks attacks and dodges.');

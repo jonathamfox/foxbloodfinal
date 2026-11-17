@@ -1,3 +1,4 @@
+import { nearbyRoute, routeAvailable } from './routes';
 import { ensureRelics } from './constants';
 import { PUZZLES, advancePuzzle, newPuzzle, relicIds, bossHasRelic, type RelicSource, type Breakable } from './expansion';
 import {
@@ -250,9 +251,9 @@ export class FoxBorneEngine {
     KeyA: 'left',
     ArrowRight: 'right',
     KeyD: 'right',
-    Space: 'jump',
-    KeyW: 'jump',
-    ArrowUp: 'jump',
+    Space: 'roll',
+    KeyW: 'use',
+    ArrowUp: 'use',
     ShiftLeft: 'roll',
     ShiftRight: 'roll',
     KeyL: 'roll',
@@ -263,9 +264,8 @@ export class FoxBorneEngine {
     KeyQ: 'heal',
     KeyR: 'heal',
     KeyE: 'use',
-    KeyI: 'block',
-    KeyS: 'block',
-    ArrowDown: 'block',
+    KeyS: 'use',
+    ArrowDown: 'use',
     Escape: 'pause',
     KeyP: 'pause',
   };
@@ -327,6 +327,7 @@ export class FoxBorneEngine {
   };
 
   public setTouchKey(k: string, down: boolean) {
+    if(k==='jump'||k==='block') return;
     audioInit();
     if (down && !this.keys[k]) this.pressed[k] = true;
     this.keys[k] = down;
@@ -1181,7 +1182,9 @@ export class FoxBorneEngine {
 
   private startAttack(heavy: boolean, combo: number) {
     const wp = this.weaponDef();
-    const s = wp.spd || 1;
+    const cost = (wp.category||'melee')==='melee' ? (heavy?34:16) : (heavy?24:11);
+    if(this.P.st<cost){this.P.buf=null;return;}
+    const s = (wp.spd || 1)*1.15;
     const cat = wp.category || 'melee';
     Object.assign(this.P, { state: 'atk', t: 0, heavy, combo, swung: false, buf: null });
     this.P.atkId++;
@@ -1200,6 +1203,7 @@ export class FoxBorneEngine {
   }
 
   private startRoll(mv: number) {
+    if(this.P.st<(this.look.build==='arqueiro'?14:20)){this.P.buf=null;return;}
     Object.assign(this.P, { state: 'roll', t: 0, buf: null, evadedHit: false });
     this.rollGhostTimer = 0;
     this.P.rdir = mv || this.P.face;
@@ -1981,7 +1985,7 @@ export class FoxBorneEngine {
 
   private hurtPlayer(dmg: number, fromX: number, attacker?: Enemy): boolean {
     const P = this.P;
-    if (P.dead || P.inv > 0) return false;
+    if (P.dead || P.inv > 0 || this.traversal) return false;
     if (this.isRollIframe()) {
       if (!P.evadedHit) {
         P.evadedHit = true;
@@ -2326,9 +2330,8 @@ export class FoxBorneEngine {
       subBanner = 'Runa obtida · Equipe na aba Runas do Braseiro';
       col = RUNES[rId].col;
     } else {
-      const sId = c.itemId as ShieldId;
-      if (!this.S.unlockedShields.includes(sId)) this.S.unlockedShields.push(sId);
-      label = (SHIELDS.find((s) => s.id === sId) || SHIELDS[0]).label;
+      const reward=350*(1+this.S.ng);this.S.cinzas+=reward;
+      label=`Reserva de cinzas · +${reward}`;subBanner='Use no braseiro para fortalecer seu personagem';
     }
 
     SFX.soul();
@@ -2362,8 +2365,25 @@ export class FoxBorneEngine {
     this.setMode('rest');
   }
 
+  private traversal: {fromX:number;fromY:number;x:number;y:number;t:number;ladder:boolean;label:string} | null = null;
+
+  private useRoute() {
+    if(this.arena>=0) return false;
+    const route=nearbyRoute(this.P);
+    if(!route) return false;
+    if(!routeAvailable(route,this.S.dead)) {
+      this.setBanner('Passagem selada','Derrote os guardiões das regiões anteriores para abrir este caminho',2.5,'#b8996c');
+      return true;
+    }
+    this.traversal={fromX:this.P.x,fromY:this.P.y,x:route.to.x,y:route.to.y,t:0,ladder:route.kind==='ladder',label:route.label};
+    this.P.vx=0;this.P.vy=0;this.P.buf=null;
+    this.shots=[];this.marks=[];this.clouds=[];
+    if(route.kind!=='ladder') this.setBanner(route.label,'Atravessando a passagem',1.1,'#8bc9bb');
+    return true;
+  }
+
   private captureInput() {
-    for (const k of ['atk', 'heavy', 'roll', 'jump']) {
+    for (const k of ['atk', 'heavy', 'roll']) {
       if (this.pressed[k]) {
         this.P.buf = k;
         this.P.bufT = 0.2;
@@ -2374,6 +2394,16 @@ export class FoxBorneEngine {
   private updatePlayer(dt: number) {
     const P = this.P;
     P.anim += dt;
+    if(this.traversal) {
+      this.updatePlayerStatuses(dt);
+      if(P.dead){this.traversal=null;return;}
+      const r=this.traversal;r.t+=dt;
+      const f=Math.min(1,r.t/(r.ladder?1.0:0.8));
+      P.vx=0;P.vy=0;P.blocking=false;P.inv=.3;
+      if(r.ladder){P.x=r.fromX+(r.x-r.fromX)*f;P.y=r.fromY+(r.y-r.fromY)*f;}
+      if(f===1){P.x=r.x;P.y=r.y;P.onGround=true;P.state='free';this.traversal=null;this.cam=clamp(P.x-W*.42,0,WORLD-W);this.safe={x:P.x,y:P.y};this.save();}
+      return;
+    }
     P.inv = Math.max(0, P.inv - dt);
     P.slow = Math.max(0, (P.slow || 0) - dt);
     P.evadeBuff = Math.max(0, P.evadeBuff - dt);
@@ -2442,7 +2472,7 @@ export class FoxBorneEngine {
     if (P.stDelay <= 0 && P.state !== 'roll' && P.state !== 'atk') {
       P.st = Math.min(
         this.maxSt(),
-        P.st + 50 * this.armorDef().staminaRegen * (1 + rt.staminaRegenBonus) * dt * (wasBlock ? 0.3 : 1)
+        P.st + 36 * this.armorDef().staminaRegen * (1 + rt.staminaRegenBonus) * dt * (wasBlock ? 0.3 : 1)
       );
     }
     if (P.rally > 0) {
@@ -2453,20 +2483,15 @@ export class FoxBorneEngine {
     const isSlowed = P.statuses.some((s) => s.id === 'slow') || (P.slow || 0) > 0;
     const moveSpd = SPEED * this.buildDef().spdMult * this.armorDef().spdMult * (1 + rt.spdMult);
     if (P.state === 'free') {
-      P.blocking = !!(this.keys.block && P.onGround && this.look.shield > 0);
+      P.blocking = false;
       if (P.blocking) P.blockT = wasBlock ? P.blockT + dt : 0;
       else P.blockT = 0;
 
       P.vx +=
         (mv * moveSpd * (P.blocking ? 0.4 : 1) * (isSlowed ? 0.48 : 1) - P.vx) *
-        Math.min(1, dt * (P.onGround ? 14 : 7));
+        Math.min(1, dt * (P.onGround ? 10 : 7));
       if (mv) P.face = mv;
-      if (P.buf === 'jump' && P.coyote > 0) {
-        P.vy = -JUMP;
-        P.coyote = 0;
-        P.buf = null;
-        P.onGround = false;
-      } else if (P.buf === 'roll' && P.onGround && P.st > 0) this.startRoll(mv);
+      if (P.buf === 'roll' && P.onGround && P.st > 0) this.startRoll(mv);
       else if ((P.buf === 'atk' || P.buf === 'heavy') && P.st > 0) this.startAttack(P.buf === 'heavy', 1);
       else if (
         this.pressed.heal &&
@@ -2482,7 +2507,7 @@ export class FoxBorneEngine {
         const chestIdx = this.nearChest();
         const loreIdx = this.nearLore();
         const npc = this.nearNpc();
-        if (this.usePuzzle()) {
+        if (this.useRoute() || this.usePuzzle()) {
           // The nearby mechanism consumes this interaction.
         } else if (chestIdx >= 0) {
           this.openChest(chestIdx);
@@ -2528,7 +2553,7 @@ export class FoxBorneEngine {
         this.attackHits();
       }
       if (P.t >= aw + aa + ar) P.state = 'free';
-      else if (P.t >= aw + aa + ar * 0.45 && P.buf) {
+      else if (P.t >= aw + aa + ar * 0.8 && P.buf) {
         if (P.buf === 'roll' && P.onGround && P.st > 0) this.startRoll(mv);
         else if (P.buf === 'atk' && !P.heavy && (P.combo || 1) < (cat === 'melee' ? 3 : 2) && P.st > 0) {
           if (mv) P.face = mv;
@@ -2600,6 +2625,7 @@ export class FoxBorneEngine {
       if (P.t >= 0.8) P.state = 'free';
     }
 
+    if(this.traversal) return;
     this.updatePlayerStatuses(dt);
 
     moveEntity(P, dt);
