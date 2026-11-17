@@ -4742,7 +4742,6 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
 
   // Banner
   if (st.banner) {
-    st.banner.t += dt;
     const b = st.banner;
     const a = clamp(Math.min(b.t / 0.5, (b.dur - b.t) / 0.8), 0, 1);
     if (b.t >= b.dur) {
@@ -4759,12 +4758,12 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
       ctx.fillStyle = b.col;
       ctx.font = `46px ${FONT_D}`;
       if ('letterSpacing' in ctx) (ctx as unknown as { letterSpacing: string }).letterSpacing = '4px';
-      ctx.fillText(b.text, W / 2, H / 2 + 10);
+      ctx.fillText(b.text, W / 2, H / 2 + 10, W - 64);
       if ('letterSpacing' in ctx) (ctx as unknown as { letterSpacing: string }).letterSpacing = '0px';
       if (b.sub) {
         ctx.font = `italic 18px ${FONT_B}`;
         ctx.fillStyle = '#8d9692';
-        ctx.fillText(b.sub, W / 2, H / 2 + 40);
+        ctx.fillText(b.sub, W / 2, H / 2 + 40, W - 64);
       }
       ctx.globalAlpha = 1;
     }
