@@ -65,7 +65,7 @@ export const TitleSheet: React.FC<TitleSheetProps> = ({
               Fox Borne
             </h1>
             <p className="m-0 text-[var(--mist)] italic max-w-[54ch]">
-              O sino tocou à meia-noite e ninguém acordou igual. Escolha sua vocação, forje seu Karma
+              Explore ruínas em profundidade, quebre objetos e descubra três criptas com enigmas. Chefes deixam conjuntos exclusivos; cada NG+ traz novas variantes. O sino tocou à meia-noite e ninguém acordou igual. Escolha sua vocação, forje seu Karma
               em pactos com viajantes, reúna armas e crônicas pelas dez regiões e derrube os doze
               horrores de Velmora.
             </p>

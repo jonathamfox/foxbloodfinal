@@ -283,7 +283,7 @@ export const RestSheet: React.FC<RestSheetProps> = ({
                       disabled={!unlocked}
                       className="gothic-btn gothic-choice text-xs py-1.5 px-2.5 flex items-center gap-1.5 disabled:opacity-45 disabled:cursor-not-allowed"
                       aria-pressed={data.weapon === wId}
-                      title={unlocked ? w.desc : 'Relíquia oculta em algum baú de Velmora'}
+                      title={unlocked ? w.desc : w.relicTint ? 'Recompensa de chefe ou cripta de enigma neste ciclo' : 'Relíquia oculta em algum baú de Velmora'}
                       onClick={() => unlocked && onSelectWeapon(wId)}
                     >
                       {!unlocked && <Lock className="w-3 h-3 opacity-70" />}

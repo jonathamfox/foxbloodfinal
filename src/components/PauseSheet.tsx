@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { drawFox } from '../game/renderer';
 import { ARMORS, BUILDS, getKarmaAlignment, SHIELDS, WEAPONS } from '../game/constants';
 import { LORE_ENTRIES } from '../game/lore';
 import type { ArmorId, RestSnapshot, ShieldId, WeaponId } from '../game/types';
@@ -34,6 +35,14 @@ export const PauseSheet: React.FC<PauseSheetProps> = ({
   onToggleMute,
   onQuit,
 }) => {
+  const previewRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c=previewRef.current?.getContext('2d'); if(!c)return;
+    c.clearRect(0,0,240,175);
+    const g=c.createRadialGradient(120,90,5,120,90,110);g.addColorStop(0,'#34484c');g.addColorStop(1,'#090e13');c.fillStyle=g;c.fillRect(0,0,240,175);
+    c.save();c.translate(120,159);c.scale(1.85,1.85);
+    drawFox(c,{t:0},{name:'Caçador',build:restData.build,weapon:restData.weapon,armor:restData.armor,shield:restData.shield});c.restore();
+  },[restData.build,restData.weapon,restData.armor,restData.shield]);
   const bDef = BUILDS[restData.build];
   const alignment = getKarmaAlignment(restData.karma);
 
@@ -74,6 +83,11 @@ export const PauseSheet: React.FC<PauseSheetProps> = ({
           <button type="button" className="gothic-btn" onClick={onQuit}>
             Voltar ao título
           </button>
+        </div>
+
+        <div className="flex items-center gap-4 border border-[var(--line)] bg-black/30 p-2">
+          <canvas ref={previewRef} width={240} height={175} aria-label="Prévia do personagem com os equipamentos atuais" style={{width:120,height:88,flexShrink:0}} />
+          <div className="text-sm"><div style={{color:WEAPONS[restData.weapon].relicTint || 'var(--bone)'}}>{WEAPONS[restData.weapon].label}</div><div style={{color:ARMORS[restData.armor].relicTint || 'var(--mist)'}}>{ARMORS[restData.armor].label}</div></div>
         </div>
 
         <div className="flex flex-col gap-3 border-t border-[var(--line)] pt-3">
