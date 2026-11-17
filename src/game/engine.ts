@@ -1,3 +1,5 @@
+import { ensureRelics } from './constants';
+import { PUZZLES, advancePuzzle, newPuzzle, relicIds, bossHasRelic, type RelicSource, type Breakable } from './expansion';
 import {
   audioInit,
   getMusicVolume,
@@ -132,6 +134,8 @@ const newStats = (build: BuildId = 'guerreiro'): SaveStats => {
     karma: 0,
     quests: {},
     endingSeen: false,
+    puzzles: {},
+    brokenProps: [],
   };
 };
 
@@ -417,6 +421,60 @@ export class FoxBorneEngine {
     }
   }
 
+  private grantRelic(source: RelicSource) {
+    ensureRelics(this.S.ng);
+    const ids = relicIds(source, this.S.ng);
+    if (!this.S.unlockedWeapons.includes(ids.weapon)) this.S.unlockedWeapons.push(ids.weapon);
+    if (!this.S.unlockedArmors.includes(ids.armor)) this.S.unlockedArmors.push(ids.armor);
+    return `${WEAPONS[ids.weapon].label} + ${ARMORS[ids.armor].label}`;
+  }
+
+  private breakables: Breakable[] = Array.from({length:NZ}, (_,k) =>
+    [370,1100,2100,2340,3000,4100,4800,5540,6380,6750].map((x,i) => ({
+      id: `ruin_${k}_${i}`, x: k*ZONE+x, y: groundAt(k*ZONE+x) ?? 440,
+      kind: (i===3?'wall':i>=8?'pillar':i%2?'crate':'urn') as Breakable['kind'],
+    }))).flat();
+
+  private shatterProps(x0:number,x1:number,y:number) {
+    this.S.brokenProps ||= [];
+    let changed = false;
+    for (const b of this.breakables) {
+      if(b.x<x0 || b.x>x1 || Math.abs(b.y-y)>95 || this.S.brokenProps.includes(b.id)) continue;
+      this.S.brokenProps.push(b.id); changed = true;
+      this.addRubble(b.x,b.y,b.kind==='pillar'?18:10);
+      this.spark(b.x,b.y-25,12,b.kind==='urn'?'#ad9679':'#858e91',190,.55,480,3);
+      this.shake = Math.max(this.shake,4); SFX.crack();
+      const amount=(b.kind==='wall'?55:8)*(1+this.S.ng);
+      this.S.cinzas += amount;
+      this.floatText(b.x,b.y-62,`+${amount} cinzas`, '#edc781');
+    }
+    if(changed) this.save();
+  }
+
+  private nearbyPuzzle() {
+    for(const p of PUZZLES) for(let index=0;index<3;index++) {
+      if(Math.abs(this.P.x-(p.x+(index-1)*95))<40 && Math.abs(this.P.y-p.y)<32)
+        return {p,index};
+    }
+    return null;
+  }
+
+  private usePuzzle():boolean {
+    const near=this.nearbyPuzzle(); if(!near) return false;
+    const {p,index}=near; this.S.puzzles ||= {};
+    const before=this.S.puzzles[p.id] || newPuzzle(p);
+    if(before.solved) { this.floatText(this.P.x,this.P.y-80,'Tesouro já recolhido', '#9bd9ff'); return true; }
+    const after=advancePuzzle(p,before,index,this.S.ng); this.S.puzzles[p.id]=after;
+    SFX.bell(); this.impactRing(p.x+(index-1)*95,p.y-35,'#70e5dd',5,40,.3);
+    if(after.solved) {
+      const reward=this.grantRelic(p.id); this.S.cinzas+=200*(1+this.S.ng);
+      this.setBanner('Cripta aberta · relíquias recolhidas',reward,7,'#70e5dd');
+      this.spark(p.x,p.y-45,35,'#f6d27a',220,1.2,90,3);
+      this.emitRest();
+    } else if(p.kind==='sequence' && after.step<=before.step) this.floatText(p.x,p.y-100,'O eco se perdeu. Tente novamente.', '#e59a88');
+    this.save(); return true;
+  }
+
   private load(): boolean {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -430,6 +488,11 @@ export class FoxBorneEngine {
           d.S.build === 'guerreiro'
             ? d.S.build
             : 'guerreiro';
+        ensureRelics(Number.isSafeInteger(d.S.ng) && d.S.ng >= 0 ? d.S.ng : 0);
+        for (const id of [...(Array.isArray(d.S.unlockedWeapons)?d.S.unlockedWeapons:[]), ...(Array.isArray(d.S.unlockedArmors)?d.S.unlockedArmors:[])]) {
+          const match = typeof id==='string' && id.match(/^relic_[wa]_[a-z]+_(\d+)$/);
+          if(match) ensureRelics(Number(match[1]));
+        }
         const base = newStats(build);
         const deadArr: boolean[] = Array.isArray(d.S.dead) ? [...d.S.dead] : [];
         while (deadArr.length < NZ) deadArr.push(false);
@@ -469,7 +532,12 @@ export class FoxBorneEngine {
           karma: typeof d.S.karma === 'number' ? d.S.karma : 0,
           quests: d.S.quests && typeof d.S.quests === 'object' ? d.S.quests : {},
           endingSeen: !!d.S.endingSeen,
+          puzzles: d.S.puzzles && typeof d.S.puzzles==='object' ? d.S.puzzles : {},
+          brokenProps: Array.isArray(d.S.brokenProps) ? d.S.brokenProps : [],
         };
+        // Existing victories receive their relics too; no progress reset is needed.
+        this.S.dead.forEach((dead,k)=>{if(dead && ARENAS[k]) this.grantRelic(ARENAS[k].boss);});
+        for(const fb of FIELD_BOSS_SPAWNS) if(this.S.deadField.includes(fb.id)) this.grantRelic(fb.type);
         if (!this.S.unlockedLore.includes('prologo')) this.S.unlockedLore.unshift('prologo');
         // Migrate legacy numeric weapon IDs
         let migratedWeapon: WeaponId = BUILDS[build].starterWeapon;
@@ -672,6 +740,9 @@ export class FoxBorneEngine {
     this.cb.onNpcDialog(null);
     this.cb.onEnding(null);
     this.S.ng++;
+    ensureRelics(this.S.ng);
+    this.S.puzzles = {};
+    this.S.brokenProps = [];
     this.S.dead = Array(NZ).fill(false);
     this.S.deadField = [];
     this.S.got = [];
@@ -689,7 +760,7 @@ export class FoxBorneEngine {
     this.emitRest();
     this.emitStatus(true);
     this.setMode('play');
-    this.setBanner(`Nova Vigília · NG+${this.S.ng}`, 'As 10 regiões despertaram mais cruéis', 3.4, '#c23a3a');
+    this.setBanner(`Nova Vigília · NG+${this.S.ng}`, 'Novas relíquias, enigmas renovados e ruínas reconstruídas', 3.4, '#c23a3a');
   }
 
   private setMode(m: GameMode) {
@@ -1440,6 +1511,7 @@ export class FoxBorneEngine {
     const r = wp.reach + (this.P.heavy ? 36 : 28);
     const x0 = this.P.face > 0 ? this.P.x - 8 : this.P.x - r;
     const x1 = x0 + r + 8;
+    this.shatterProps(x0,x1,this.P.y);
     for (const e of this.enemies) {
       if (e.dead || e.pending || (e.spawnTime || 0) > 0 || e.hitBy === this.P.atkId) continue;
       if (e.x + e.hw > x0 && e.x - e.hw < x1 && e.y > this.P.y - 84 && e.y - e.h < this.P.y + 4) {
@@ -2410,7 +2482,9 @@ export class FoxBorneEngine {
         const chestIdx = this.nearChest();
         const loreIdx = this.nearLore();
         const npc = this.nearNpc();
-        if (chestIdx >= 0) {
+        if (this.usePuzzle()) {
+          // The nearby mechanism consumes this interaction.
+        } else if (chestIdx >= 0) {
           this.openChest(chestIdx);
         } else if (loreIdx >= 0) {
           this.readLore(loreIdx);
@@ -2712,13 +2786,15 @@ export class FoxBorneEngine {
   }
 
   private bossDown(e: Enemy) {
+    const relic = bossHasRelic(e.type) ? this.grantRelic(e.type) : '';
+    this.shatterProps(e.x-220,e.x+220,e.y);
     if (e.fieldBoss) {
       if (e.fieldId && !this.S.deadField.includes(e.fieldId)) this.S.deadField.push(e.fieldId);
       const fLore = e.type === 'cacador' ? 'boss_cacador' : e.type === 'fera' ? 'boss_fera' : '';
       if (fLore) this.unlockLore(fLore, false);
       this.setBanner(
         e.type === 'cacador' ? 'O caçador repousa' : 'A prece silenciou',
-        ET[e.type].name || 'Fera derrotada',
+        `Relíquias recolhidas: ${relic}`,
         3.6,
         '#e0b060'
       );
@@ -2726,6 +2802,7 @@ export class FoxBorneEngine {
       this.spark(e.x, e.y - 60, 50, '#e89a3c', 320, 1.4, 200, 2.8);
       this.impactRing(e.x, e.y - 60, '#f6d27a', 16, 140, 0.45);
       this.shake = 14;
+      this.emitRest();
       this.save();
       return;
     }
@@ -2764,7 +2841,7 @@ export class FoxBorneEngine {
         'O lamento estelar cessou',
         'O eclipse se inclina diante de ti',
       ][e.k] || 'Horror derrotado',
-      last ? 'O destino final de Velmora desperta' : 'O caminho adiante se abre',
+      `Relíquias recolhidas: ${relic}`,
       5,
       '#e0b060'
     );
@@ -2785,6 +2862,7 @@ export class FoxBorneEngine {
   private canStep = (e: Enemy, m: number) => m === 0 || supported(e.x + m * (e.hw + 8), e.y);
 
   private meleeHit(e: Enemy, range: number, dmg: number) {
+    if(e.boss) this.shatterProps(e.x-range,e.x+range,e.y);
     if (e.hit) return;
     const x0 = e.face > 0 ? e.x : e.x - range;
     const x1 = x0 + range;
@@ -5336,8 +5414,10 @@ export class FoxBorneEngine {
         }
       }
 
+      const shotX = s.x;
       s.x += s.vx * dt;
       s.y += s.vy * dt;
+      this.shatterProps(Math.min(shotX,s.x)-s.hw,Math.max(shotX,s.x)+s.hw,s.y+25);
       const g = groundAt(s.x);
 
       if (s.kind === 'fire_wave' && Math.random() < 0.45) {
@@ -5573,6 +5653,7 @@ export class FoxBorneEngine {
       m.t += dt;
       if (m.t >= 1.55 && !m.hit) {
         m.hit = true;
+        this.shatterProps(m.x-100,m.x+100,m.gy);
         this.addRubble(m.x, m.gy, 24);
         this.spark(m.x, m.gy - 10, 22, '#f6d27a', 260, 0.7, 360, 2.8);
         this.spark(m.x, m.gy - 14, 14, '#a6def0', 220, 0.5, 220, 2.2);
@@ -5669,6 +5750,7 @@ export class FoxBorneEngine {
         P: this.P,
         drop: this.drop,
         chests: this.chests,
+        breakables: this.breakables,
         enemies: this.enemies,
         shots: this.shots,
         marks: this.marks,

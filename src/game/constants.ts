@@ -1,3 +1,4 @@
+import { makeRelics } from './expansion';
 import type {
   AppearanceDef,
   ArmorDef,
@@ -1392,3 +1393,14 @@ export const FOX_PALETTE = {
   glove: '#1f1c1b',
   trim: '#a8884a',
 };
+
+// Register only cycles that exist in this save, retaining every collected variant.
+const relicCycles = new Set<number>();
+export function ensureRelics(ng: number) {
+  if (!Number.isSafeInteger(ng) || ng < 0 || relicCycles.has(ng)) return;
+  relicCycles.add(ng);
+  const {weapons, armors} = makeRelics(ng);
+  for (const w of weapons) { WEAPONS[w.id!] = w; WEAPON_LIST.push(w); }
+  for (const a of armors) { ARMORS[a.id] = a; ARMOR_LIST.push(a); }
+}
+ensureRelics(0);

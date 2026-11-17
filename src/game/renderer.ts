@@ -1,3 +1,5 @@
+import { drawDepthBack, drawDepthFloor, drawDepthFront, drawRuins, drawPuzzleWorld, drawPuzzleHint } from './depth';
+import type { Breakable } from './expansion';
 import {
   ARMORS,
   BUILDS,
@@ -390,6 +392,14 @@ export function drawWeapon(c: CanvasRenderingContext2D, w: WeaponDef, L: { trim:
     c.fillStyle = '#5e4318';
     c.fillRect(r + 4, -11, 2, 22);
   }
+  if(w.relicTint) {
+    c.save();c.strokeStyle=w.relicTint;c.fillStyle=w.relicTint;c.lineWidth=1.4;
+    c.shadowColor=w.relicTint;c.shadowBlur=6;
+    for(let i=0;i<3;i++) {const x=9+i*7;c.beginPath();c.moveTo(x,-2);c.lineTo(x+3,-5);c.lineTo(x+5,-1);c.stroke();}
+    c.beginPath();c.moveTo(-2,-3);c.lineTo(2,-7);c.lineTo(6,-3);c.lineTo(2,1);c.closePath();c.fill();
+    c.restore();
+  }
+
 }
 
 export function drawShield(
@@ -1125,6 +1135,17 @@ export function drawFox(c: CanvasRenderingContext2D, p: PoseParams, look: Player
   c.rotate(rel);
   drawWeapon(c, wp, { trim: armor.trim });
   c.restore();
+
+  if(armor.relicTint) {
+    c.save();c.fillStyle=armor.trim;c.strokeStyle='#17232b';c.lineWidth=.9;
+    for(const side of [-1,1]) {
+      c.beginPath();c.moveTo(side*7,-47);c.lineTo(side*18,-51);c.lineTo(side*21,-42);c.lineTo(side*11,-39);c.closePath();c.fill();c.stroke();
+      c.strokeStyle=armor.trim;c.beginPath();c.moveTo(side*9,-34);c.lineTo(side*12,-23);c.lineTo(side*7,-17);c.stroke();
+    }
+    c.shadowColor=armor.relicTint;c.shadowBlur=8;c.fillStyle=armor.relicTint;
+    c.beginPath();c.moveTo(0,-45);c.lineTo(4,-39);c.lineTo(0,-33);c.lineTo(-4,-39);c.closePath();c.fill();
+    c.restore();
+  }
 
   if (p.block) {
     drawShield(c, { coat: armor.coat, trim: armor.trim, shield: look.shield }, hx + 6, hy + 7, 1.35);
@@ -2801,6 +2822,7 @@ export interface RenderState {
   P: Player;
   drop: DropPool | null;
   chests: LootChest[];
+  breakables: Breakable[];
   enemies: Enemy[];
   shots: Shot[];
   marks: Mark[];
@@ -3294,6 +3316,8 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
     ctx.fill();
   }
 
+  drawDepthBack(ctx, cam, time, zIdx, reduceMotion);
+
   // World space
   ctx.save();
   const sx = reduceMotion ? 0 : rnd(-shake, shake);
@@ -3349,6 +3373,10 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
     ctx.fillRect(p.x + 8, p.y + 12, 5, 16);
     ctx.fillRect(p.x + p.w - 13, p.y + 12, 5, 16);
   }
+
+  drawDepthFloor(ctx, cam, zIdx, enemies, P);
+  drawRuins(ctx, cam, st.breakables, S, time);
+  drawPuzzleWorld(ctx, cam, S, time);
 
   // Braziers
   BRAZ.forEach((b, i) => {
@@ -4434,6 +4462,8 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
 
   ctx.restore();
 
+  drawDepthFront(ctx, cam, P, zIdx);
+
   // Zone-adaptive Atmospheric Particles (Rain, Blood-Ash, Astral Wisps & Cinders)
   ctx.fillStyle = blend > 0.5 ? tB.moteCol : tA.moteCol;
   for (let i = 0; i < 48; i++) {
@@ -4661,6 +4691,8 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
       ctx.fillText(txt, W / 2, H - 90);
     }
   }
+
+  if(mode==='play' && !P.dead) drawPuzzleHint(ctx, P, S, isTouch);
 
   // Animated Region Transition Overlay (cinematic curtain sweep + region crest)
   if (st.zoneTrans && mode === 'play') {

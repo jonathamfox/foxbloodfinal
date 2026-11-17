@@ -4,6 +4,7 @@ export type BuildId = 'guerreiro' | 'arqueiro' | 'mago' | 'piromante';
 export type WeaponCategory = 'melee' | 'bow' | 'magic' | 'pyro';
 
 export type WeaponId =
+  | `relic_w_${string}_${number}`
   | 'espada_vigilia'
   | 'machado_velmora'
   | 'foice_lunar'
@@ -23,6 +24,7 @@ export type WeaponId =
   | 'tocha_profana';
 
 export type ArmorId =
+  | `relic_a_${string}_${number}`
   | 'sobretudo_velmora'
   | 'cota_guardiao'
   | 'manto_patrulheiro'
@@ -110,6 +112,7 @@ export interface SpellDef {
 }
 
 export interface WeaponDef {
+  relicTint?: string;
   id?: WeaponId;
   type:
     | 'espada'
@@ -143,6 +146,7 @@ export interface WeaponDef {
 }
 
 export interface ArmorDef {
+  relicTint?: string;
   id: ArmorId;
   label: string;
   desc: string;
@@ -312,6 +316,8 @@ export interface EndingSnapshot {
 }
 
 export interface SaveStats {
+  puzzles?: Record<string, import('./expansion').PuzzleProgress>;
+  brokenProps?: string[];
   level: number;
   vig: number;
   end: number;
