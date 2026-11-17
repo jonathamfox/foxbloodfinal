@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Fox Borne",
+  "short_name": "Fox Borne",
+  "description": "RPG de ação 2D gótico vitoriano em Velmora.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0a0c0e",
+  "theme_color": "#0a0c0e",
+  "icons": [
+    {
+      "src": "/assets/aistudio/icon_97a72d72.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

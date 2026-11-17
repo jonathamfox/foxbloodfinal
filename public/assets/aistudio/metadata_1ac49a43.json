@@ -1,0 +1,6 @@
+{
+  "name": "Fox Borne",
+  "description": "Jogo de RPG e ação 2D estilo Bloodborne com estética gótica vitoriana em Velmora.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

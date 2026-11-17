@@ -1,0 +1,6 @@
+{
+  "name": "Fox Borne",
+  "description": "Jogo de ação 2D de rolagem lateral, sombrio e gótico, ambientado em Velmora.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

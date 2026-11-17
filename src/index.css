@@ -1,0 +1,390 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #0a0c0e;
+  --stone: #14181b;
+  --slab: #1e2428;
+  --line: #39424a;
+  --bone: #d8d0bd;
+  --mist: #8d9692;
+  --ember: #d9772f;
+  --blood: #9a2222;
+  --display: "IM Fell English SC", "Palatino Linotype", Georgia, serif;
+  --body: "IM Fell English", "Palatino Linotype", Georgia, serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+  overflow: hidden;
+}
+
+.stage,
+canvas#game,
+.touch {
+  touch-action: none;
+}
+
+.font-display {
+  font-family: var(--display);
+}
+
+.font-body {
+  font-family: var(--body);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.stage {
+  width: min(100%, calc((100dvh - 90px) * 16 / 9));
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  background: #000;
+  position: relative;
+}
+
+canvas#game {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow: auto;
+  display: flex;
+  padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+    max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(8, 10, 12, 0.9);
+}
+
+.sheet-backdrop.title-backdrop {
+  background: linear-gradient(180deg, rgba(8, 10, 12, 0.35), rgba(8, 10, 12, 0.85) 70%);
+}
+
+.gothic-btn {
+  font: inherit;
+  font-family: var(--display);
+  letter-spacing: 0.06em;
+  color: var(--bone);
+  background: var(--stone);
+  border: 1px solid var(--line);
+  padding: 9px 18px;
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gothic-btn:hover:not(:disabled) {
+  border-color: var(--ember);
+}
+
+.gothic-btn:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+
+.gothic-btn.primary {
+  background: #5a2c10;
+  border-color: var(--ember);
+}
+
+.gothic-btn.primary:hover:not(:disabled) {
+  background: #73380f;
+}
+
+.gothic-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--line);
+}
+
+.gothic-choice {
+  padding: 6px 14px;
+  font-size: 14px;
+}
+
+.gothic-choice[aria-pressed="true"] {
+  border-color: var(--ember);
+  background: #3a2012;
+  color: #fff;
+}
+
+/* Touch controls */
+.touch {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.stick {
+  width: 124px;
+  height: 124px;
+  border-radius: 50%;
+  position: relative;
+  pointer-events: auto;
+  touch-action: none;
+  background: radial-gradient(circle, rgba(30, 36, 40, 0.22) 40%, rgba(30, 36, 40, 0.6));
+  border: 2px solid rgba(216, 208, 189, 0.35);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5);
+}
+
+.stick i {
+  position: absolute;
+  top: 50%;
+  margin-top: -9px;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 18px;
+  color: rgba(216, 208, 189, 0.5);
+  pointer-events: none;
+}
+
+.stick i:first-of-type {
+  left: 9px;
+}
+
+.stick i:last-of-type {
+  right: 9px;
+}
+
+.knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  margin: -27px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at 40% 35%, rgba(216, 208, 189, 0.75), rgba(141, 150, 146, 0.4));
+  border: 2px solid rgba(216, 208, 189, 0.6);
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.6);
+}
+
+.acts {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  flex: none;
+  pointer-events: none;
+}
+
+.touch button {
+  position: absolute;
+  pointer-events: auto;
+  border-radius: 50%;
+  padding: 0;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle, rgba(40, 46, 50, 0.5), rgba(14, 17, 19, 0.62));
+  border: 2px solid rgba(216, 208, 189, 0.4);
+  color: var(--bone);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(216, 208, 189, 0.08);
+}
+
+.touch button svg {
+  width: 56%;
+  height: 56%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px rgba(216, 208, 189, 0.6));
+  pointer-events: none;
+}
+
+.touch button.on {
+  border-color: var(--ember);
+  color: #fff;
+  background: radial-gradient(circle, rgba(217, 119, 47, 0.55), rgba(90, 44, 16, 0.6));
+  transform: scale(0.94);
+}
+
+.touch .b-atk {
+  width: 78px;
+  height: 78px;
+  right: 0;
+  bottom: 0;
+}
+
+.touch .b-roll {
+  right: 101px;
+  bottom: 9px;
+}
+
+.touch .b-jump {
+  right: 74px;
+  bottom: 74px;
+}
+
+.touch .b-heavy {
+  right: 9px;
+  bottom: 101px;
+}
+
+.touch .sm {
+  width: 46px;
+  height: 46px;
+}
+
+.touch .b-use {
+  right: 172px;
+  bottom: 15px;
+}
+
+.touch .b-special {
+  right: 162px;
+  bottom: 82px;
+  border-color: rgba(140, 205, 224, 0.72);
+  background: conic-gradient(rgba(116, 197, 209, 0.42) var(--energy, 40%), rgba(10, 16, 22, 0.72) 0);
+}
+
+.touch .b-special.ready {
+  border-color: #d8f7ff;
+  color: #e6fbff;
+  box-shadow: 0 0 18px rgba(156, 221, 252, 0.65);
+}
+
+.touch .b-block {
+  right: 137px;
+  bottom: 137px;
+}
+
+.touch .b-heal {
+  right: 15px;
+  bottom: 172px;
+}
+
+.touch .b-spell {
+  right: 78px;
+  bottom: 162px;
+  border-color: rgba(246, 138, 56, 0.65);
+}
+
+.pausebtn {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(14, 17, 19, 0.6);
+  border: 2px solid rgba(216, 208, 189, 0.4);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--bone);
+  font-family: var(--display);
+}
+
+.rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--ink);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+}
+
+.rotate svg {
+  width: 84px;
+  height: 84px;
+  fill: none;
+  stroke: var(--ember);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.minimap-hud {
+  position: absolute;
+  bottom: 3%;
+  left: 2.2%;
+  z-index: 6;
+}
+
+@media (pointer: coarse) {
+  .touch {
+    display: flex;
+  }
+  .keys-bar {
+    display: none;
+  }
+  .pausebtn {
+    display: block;
+  }
+  .minimap-hud {
+    bottom: 148px;
+    left: 12px;
+  }
+  .stage {
+    position: fixed;
+    inset: 0;
+    width: auto;
+    max-width: none;
+    aspect-ratio: auto;
+    border: 0;
+    display: grid;
+    place-items: center;
+    background: #000;
+  }
+  canvas#game {
+    width: min(100vw, calc(100dvh * 16 / 9));
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (pointer: coarse) and (orientation: portrait) {
+  .rotate {
+    display: flex;
+  }
+}
