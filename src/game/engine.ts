@@ -397,7 +397,7 @@ export class FoxBorneEngine {
   private maxFlasks = () => FLASKS + (this.S.flask || 0);
   private cost = () => Math.round(90 * Math.pow(1.16, this.S.level - 1));
   private hard = () => 1 + 0.55 * this.S.ng + 0.08 * this.S.ng * this.S.ng;
-  private dmgHard = () => 1 + 0.35 * this.S.ng;
+  private dmgHard = () => 1.25 * (1 + 0.35 * this.S.ng);
   private spdHard = () => 1 + Math.min(0.45, 0.08 * this.S.ng);
   private cdHard = () => Math.max(0.55, 1 - 0.08 * this.S.ng);
 
@@ -796,7 +796,8 @@ export class FoxBorneEngine {
     const d = ET[type];
     const boss = !!d.name;
     const zm = boss ? 1 : 1 + 0.25 * k;
-    const hp = Math.round(d.hp * this.hard() * zm);
+    const durability = boss ? 1.75 : d.tier === 'Elite' ? 1.45 : 1;
+    const hp = Math.round(d.hp * this.hard() * zm * durability);
     const e: Enemy = {
       uid: ++this.enemyUid,
       type,
@@ -1769,11 +1770,11 @@ export class FoxBorneEngine {
         e.bleedBuild = 0;
         e.bleedCd = 2.0;
         const burst = e.boss ? Math.min(260, Math.round(e.maxHp * 0.08)) : Math.max(18, Math.round(e.maxHp * 0.14));
-        e.hp -= burst;
+        e.hp -= this.enemyDamageTaken(e, burst, true);
         e.flash = 0.16;
         e.shown = 4;
         this.blood(e.x, e.y - e.h * 0.5, this.P.face);
-        this.floatText(e.x, e.y - e.h - 14, `Hemorragia -${burst}`, '#d13838');
+        this.floatText(e.x, e.y - e.h - 14, `Hemorragia -${this.enemyDamageTaken(e, burst, true)}`, '#d13838');
         const ex = e.statuses.find((s) => s.id === 'bleed');
         if (ex) {
           ex.remaining = Math.max(ex.remaining, duration);
@@ -2618,6 +2619,17 @@ export class FoxBorneEngine {
     SFX.hiss();
   }
 
+  // Resistance covers direct hits and percentage-based status effects.
+  private enemyDamageTaken(e: Enemy, damage: number, status = false): number {
+    const multiplier = e.boss ? (status ? 0.4 : 0.7) : ET[e.type].tier === 'Elite' ? (status ? 0.65 : 0.75) : 1;
+    return Math.max(1, Math.round(damage * multiplier));
+  }
+
+  // Increase pressure without shortening attack telegraphs.
+  private enemyAttackTempo(e: Enemy): number {
+    return e.boss ? 1.25 : ET[e.type].tier === 'Elite' ? 1.2 : 1;
+  }
+
   private damageEnemy(
     e: Enemy,
     dmg: number,
@@ -2629,6 +2641,8 @@ export class FoxBorneEngine {
     const d = ET[e.type];
     if (e.state === 'reveal' || e.state === 'blink') return;
     if (e.boss && !e.fieldBoss && this.arena !== e.k) return;
+
+    dmg = this.enemyDamageTaken(e, dmg);
 
     // Sentinela frontal tower shield block check
     if (e.type === 'sentinela' && e.guarding && !heavy && !isRangedOrMagic && dir !== e.face) {
@@ -2678,12 +2692,12 @@ export class FoxBorneEngine {
       const wp = this.weaponDef();
       const poiseHit = (heavy ? 55 : 22) * (wp.type === 'machado' || wp.type === 'montante' ? 1.5 : 1);
       e.poiseDmg = (e.poiseDmg || 0) + poiseHit;
-      const threshold = e.boss ? 160 : d.poise ? 95 : 45;
+      const threshold = e.boss ? 260 : d.tier === 'Elite' ? 150 : d.poise ? 95 : 45;
       if (e.poiseDmg >= threshold) {
         e.poiseDmg = 0;
         this.applyEnemyStatus(e, 'stagger', e.boss ? 1.1 : 1.25);
         e.vx = dir * (e.boss ? 0 : 180);
-      } else if (!d.poise || (heavy && !e.boss && e.type !== 'viuva')) {
+      } else if (!d.poise || (heavy && !e.boss && d.tier !== 'Elite' && e.type !== 'viuva')) {
         e.state = 'hurt';
         e.t = heavy ? 0.42 : 0.22;
         e.vx = dir * (heavy ? 230 : 120);
@@ -2826,7 +2840,7 @@ export class FoxBorneEngine {
           s.tick = (s.tick ?? 0.8) - dt;
           if (s.tick <= 0) {
             s.tick = 0.8;
-            e.hp -= Math.max(4, Math.round(e.maxHp * 0.025));
+            e.hp -= this.enemyDamageTaken(e, Math.max(4, Math.round(e.maxHp * 0.025)), true);
             e.shown = 4;
             this.spark(e.x, e.y - e.h * 0.5, 4, '#78c257', 60, 0.4, -20, 2);
             if (e.hp <= 0) this.killEnemy(e, e.face);
@@ -2838,7 +2852,7 @@ export class FoxBorneEngine {
           }
           if (s.tick <= 0) {
             s.tick = 0.65;
-            e.hp -= Math.max(6, Math.round(e.maxHp * 0.03));
+            e.hp -= this.enemyDamageTaken(e, Math.max(6, Math.round(e.maxHp * 0.03)), true);
             e.shown = 4;
             this.spark(e.x, e.y - e.h * 0.55, 5, '#ff6a2e', 90, 0.4, -70, 2.3);
             if (e.hp <= 0) this.killEnemy(e, e.face);
@@ -2891,7 +2905,7 @@ export class FoxBorneEngine {
     }
 
     if (dist > 1400 && e.state === 'idle') return;
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     e.alert = Math.max(0, (e.alert || 0) - dt);
 
     const blind = e.type === 'costureira';
@@ -3275,7 +3289,7 @@ export class FoxBorneEngine {
   private aiGargula(e: Enemy, dt: number, dx: number, dist: number, dy: number) {
     const d = ET.gargula;
     const baseY = (e.baseY ?? 440) - 110;
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     const see = !this.P.dead && dist < (d.aggro || 540) && dy < 240;
 
     if (e.state === 'idle') {
@@ -3376,7 +3390,7 @@ export class FoxBorneEngine {
     const p2 = e.hp < e.maxHp * 0.5;
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     e.ecd = Math.max(0, (e.ecd === undefined ? 5 : e.ecd) - dt);
     if (p2 && !e.raged) {
       e.raged = true;
@@ -3751,7 +3765,7 @@ export class FoxBorneEngine {
     }
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     if (e.state === 'reveal') {
       e.vx = 0;
       e.t += dt;
@@ -3926,7 +3940,7 @@ export class FoxBorneEngine {
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
     const dy = Math.abs(this.P.y - e.y);
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     const p2 = e.hp < e.maxHp * 0.5;
 
     if (p2 && !e.raged) {
@@ -4091,7 +4105,7 @@ export class FoxBorneEngine {
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
     const dy = Math.abs(this.P.y - e.y);
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     const p2 = e.hp < e.maxHp * 0.5;
 
     if (p2 && !e.raged) {
@@ -4219,7 +4233,7 @@ export class FoxBorneEngine {
     const A = ARENAS[e.k];
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     e.ecd = Math.max(0, (e.ecd === undefined ? 3 : e.ecd) - dt);
 
     const stage = e.hp > e.maxHp * 0.7 ? 0 : e.hp > e.maxHp * 0.38 ? 1 : 2;
@@ -4377,7 +4391,7 @@ export class FoxBorneEngine {
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
     const p2 = e.hp < e.maxHp * 0.5;
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
 
     if (p2 && !e.raged) {
       e.raged = true;
@@ -4542,7 +4556,7 @@ export class FoxBorneEngine {
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
     const p2 = e.hp < e.maxHp * 0.55;
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     e.ecd = Math.max(0, (e.ecd === undefined ? 5 : e.ecd) - dt);
 
     if (p2 && !e.raged) {
@@ -4672,7 +4686,7 @@ export class FoxBorneEngine {
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
     const p2 = e.hp < e.maxHp * 0.5;
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
 
     if (p2 && !e.raged) {
       e.raged = true;
@@ -4808,7 +4822,7 @@ export class FoxBorneEngine {
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
     const p2 = e.hp < e.maxHp * 0.5;
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
 
     if (p2 && !e.raged) {
       e.raged = true;
@@ -4910,7 +4924,7 @@ export class FoxBorneEngine {
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
     const p2 = e.hp < e.maxHp * 0.55;
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
 
     if (p2 && !e.raged) {
       e.raged = true;
@@ -5026,7 +5040,7 @@ export class FoxBorneEngine {
     const dx = this.P.x - e.x;
     const dist = Math.abs(dx);
     const p2 = e.hp < e.maxHp * 0.55;
-    e.cd = Math.max(0, e.cd - dt);
+    e.cd = Math.max(0, e.cd - dt * this.enemyAttackTempo(e));
     e.ecd = Math.max(0, (e.ecd === undefined ? 4 : e.ecd) - dt);
 
     if (p2 && !e.raged) {
