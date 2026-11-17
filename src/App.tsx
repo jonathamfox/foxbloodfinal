@@ -72,7 +72,7 @@ function goFull(toggle = false) {
   }
 }
 
-export default function App() {
+function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<FoxBorneEngine | null>(null);
 
@@ -329,6 +329,38 @@ export default function App() {
           onClose={() => engineRef.current?.closeLore()}
         />
       )}
+    </div>
+  );
+}
+
+
+// Mount the game only after the opening, keeping its controls and audio inactive.
+export default function App() {
+  const [opening, setOpening] = useState(true);
+  const [sound, setSound] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  if (!opening) return <Game />;
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <video
+        ref={videoRef}
+        src={import.meta.env.BASE_URL + 'assets/abertura.mp4'}
+        autoPlay muted={!sound} playsInline controls preload="metadata"
+        aria-label="Abertura de Fox Borne"
+        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        onEnded={() => setOpening(false)}
+        onError={() => setOpening(false)}
+      />
+      <div style={{ position: 'absolute', top: 'max(16px, env(safe-area-inset-top))', right: 'max(16px, env(safe-area-inset-right))', display: 'flex', gap: 12 }}>
+        {!sound && <button autoFocus onClick={() => {
+          setSound(true);
+          if (videoRef.current) {
+            videoRef.current.muted = false;
+            videoRef.current.play().catch(() => {});
+          }
+        }} style={{ padding: '12px 18px', background: '#191919e8', color: '#fff', border: '1px solid #aaa', borderRadius: 6 }}>Ativar som</button>}
+        <button onClick={() => setOpening(false)} style={{ padding: '12px 18px', background: '#191919e8', color: '#fff', border: '1px solid #aaa', borderRadius: 6 }}>Pular abertura</button>
+      </div>
     </div>
   );
 }
