@@ -1,0 +1,56 @@
+name: Publish Fox Borne
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare game for GitHub Pages
+        shell: python
+        run: |
+          import json, pathlib
+          p = pathlib.Path('package.json')
+          data = json.loads(p.read_text())
+          data['devDependencies']['esbuild'] = '^0.28.0'
+          p.write_text(json.dumps(data, indent=2) + '\n')
+          for name in ['src/components/HunterPortrait.tsx', 'src/components/BestiarySheet.tsx', 'src/game/audio.ts']:
+              p = pathlib.Path(name)
+              p.write_text(p.read_text().replace("'/assets/", "import.meta.env.BASE_URL + 'assets/"))
+          p = pathlib.Path('index.html')
+          p.write_text(p.read_text().replace('href="/manifest.json"', 'href="%BASE_URL%manifest.json"').replace('href="/assets/', 'href="%BASE_URL%assets/'))
+          p = pathlib.Path('public/manifest.json')
+          data = json.loads(p.read_text())
+          data['start_url'] = './'
+          data['scope'] = './'
+          for icon in data.get('icons', []):
+              icon['src'] = icon['src'].lstrip('/')
+          p.write_text(json.dumps(data, indent=2) + '\n')
+      - run: npm install
+      - run: npm run build -- --base=/foxbloodfinal/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy game
+        id: deployment
+        uses: actions/deploy-pages@v4
