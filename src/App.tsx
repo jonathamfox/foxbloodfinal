@@ -195,9 +195,6 @@ function Game() {
           <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">A D</b> andar
         </span>
         <span>
-          <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">Espaço</b> pular
-        </span>
-        <span>
           <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">J</b> golpe
         </span>
         <span>
@@ -210,16 +207,13 @@ function Game() {
           <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">C</b> especial
         </span>
         <span>
-          <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">L / Shift</b> rolar (i-frames)
-        </span>
-        <span>
-          <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">I / S</b> escudo
+          <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">Espaço / L / Shift</b> rolar (i-frames)
         </span>
         <span>
           <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">Q</b> frasco
         </span>
         <span>
-          <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">E</b> usar / ler / falar
+          <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">E</b> escadas / passagens / usar
         </span>
         <span>
           <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">M</b> mapa
