@@ -50,7 +50,7 @@ export function drawRouteHint(c:CanvasRenderingContext2D,P:Player,S:SaveStats,to
   const r=nearbyRoute(P);if(!r)return;
   c.save();c.fillStyle='rgba(5,12,16,.92)';c.fillRect(W/2-240,80,480,48);
   c.fillStyle='#b8e1d6';c.font='16px Georgia';c.textAlign='center';
-  c.fillText(routeAvailable(r,S.dead)?`${r.kind==='ladder'?(touch?'Direcional ↑ / ↓':'↑ / ↓'):(touch?'Ação no direcional':'E')} · ${r.label}`:'Passagem selada pelos guardiões anteriores',W/2,109,460);c.restore();
+  c.fillText(routeAvailable(r,S.dead)?`${r.kind==='ladder'?(touch?'Direcional ↑ / ↓':'↑ / ↓'):(touch?'AÇÃO':'E')} · ${r.label}`:'Passagem selada pelos guardiões anteriores',W/2,109,460);c.restore();
 }
 // World-space interiors sit behind combat silhouettes. Platforms remain readable.
 export function drawUnderground(c:CanvasRenderingContext2D,cam:number,time:number) {
