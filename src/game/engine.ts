@@ -252,8 +252,8 @@ export class FoxBorneEngine {
     ArrowRight: 'right',
     KeyD: 'right',
     Space: 'roll',
-    KeyW: 'use',
-    ArrowUp: 'use',
+    KeyW: 'climbUp',
+    ArrowUp: 'climbUp',
     ShiftLeft: 'roll',
     ShiftRight: 'roll',
     KeyL: 'roll',
@@ -264,8 +264,8 @@ export class FoxBorneEngine {
     KeyQ: 'heal',
     KeyR: 'heal',
     KeyE: 'use',
-    KeyS: 'use',
-    ArrowDown: 'use',
+    KeyS: 'climbDown',
+    ArrowDown: 'climbDown',
     Escape: 'pause',
     KeyP: 'pause',
   };
@@ -2367,10 +2367,11 @@ export class FoxBorneEngine {
 
   private traversal: {fromX:number;fromY:number;x:number;y:number;t:number;ladder:boolean;label:string} | null = null;
 
-  private useRoute() {
+  private useRoute(direction?: number) {
     if(this.arena>=0) return false;
     const route=nearbyRoute(this.P);
     if(!route) return false;
+    if(direction && (route.kind!=="ladder" || Math.sign(route.to.y-route.y)!==direction)) return false;
     if(!routeAvailable(route,this.S.dead)) {
       this.setBanner('Passagem selada','Derrote os guardiões das regiões anteriores para abrir este caminho',2.5,'#b8996c');
       return true;
@@ -2378,7 +2379,7 @@ export class FoxBorneEngine {
     this.traversal={fromX:this.P.x,fromY:this.P.y,x:route.to.x,y:route.to.y,t:0,ladder:route.kind==='ladder',label:route.label};
     this.P.vx=0;this.P.vy=0;this.P.buf=null;
     this.shots=[];this.marks=[];this.clouds=[];
-    if(route.kind!=='ladder') this.setBanner(route.label,'Atravessando a passagem',1.1,'#8bc9bb');
+    if(route.kind!=='ladder') {this.banner=null;SFX.zoneTransition();}
     return true;
   }
 
@@ -2401,6 +2402,7 @@ export class FoxBorneEngine {
       const f=Math.min(1,r.t/(r.ladder?1.0:0.8));
       P.vx=0;P.vy=0;P.blocking=false;P.inv=.3;
       if(r.ladder){P.x=r.fromX+(r.x-r.fromX)*f;P.y=r.fromY+(r.y-r.fromY)*f;}
+      if(!r.ladder&&f>=.5){P.x=r.x;P.y=r.y;this.cam=clamp(P.x-W*.42,0,WORLD-W);}
       if(f===1){P.x=r.x;P.y=r.y;P.onGround=true;P.state='free';this.traversal=null;this.cam=clamp(P.x-W*.42,0,WORLD-W);this.safe={x:P.x,y:P.y};this.save();}
       return;
     }
@@ -2503,7 +2505,8 @@ export class FoxBorneEngine {
         P.healed = false;
         P.flasks--;
       }
-      if (this.pressed.use && P.onGround) {
+      if(P.onGround&&(this.pressed.climbUp||this.pressed.climbDown)) this.useRoute(this.pressed.climbUp?-1:1);
+      if (!this.traversal && this.pressed.use && P.onGround) {
         const chestIdx = this.nearChest();
         const loreIdx = this.nearLore();
         const npc = this.nearNpc();
@@ -2658,7 +2661,7 @@ export class FoxBorneEngine {
         dur: 2.8,
       };
       SFX.zoneTransition();
-      this.setBanner(ZONE_NAMES[z], ZONE_SUBTITLES[z] || '', 2.6, col);
+      this.banner=null;
       const zoneLoreMap: Record<number, string> = {
         1: 'catedral_submersa',
         2: 'salao_coroa',
@@ -5799,6 +5802,7 @@ export class FoxBorneEngine {
           ready: this.isNpcObjectiveMet(def),
         })),
         zoneTrans: this.zoneTrans,
+        passage: this.traversal&&!this.traversal.ladder?{t:this.traversal.t/.8,label:this.traversal.label}:null,
         maxHp: this.maxHp(),
         maxSt: this.maxSt(),
         maxFlasks: this.maxFlasks(),

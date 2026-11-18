@@ -79,3 +79,10 @@ for(const r of ROUTES){loaded.S.dead=Array(10).fill(true);loaded.P.x=r.x;loaded.
 loaded.P.st=1;loaded.P.state='free';loaded.startAttack(false,1);assert.equal(loaded.P.state,'free');loaded.startRoll(1);assert.equal(loaded.P.state,'free');
 assert(!Object.values((FoxBorneEngine as any).KEY_MAP).includes('jump'));assert(!Object.values((FoxBorneEngine as any).KEY_MAP).includes('block'));
 console.log('PASS: full ground route both directions; all ladders and chests reachable; bidirectional passages; boss locks; insufficient stamina blocks attacks and dodges.');
+
+// Climbing input must never activate a doorway or the wrong end of a ladder.
+const ladder=ROUTES.find(r=>r.kind==='ladder'&&r.to.y<r.y)!;
+loaded.P.x=ladder.x;loaded.P.y=ladder.y;assert(!loaded.useRoute(1));assert(loaded.useRoute(-1));loaded.updatePlayer(1.1);
+const door=ROUTES.find(r=>r.kind==='passage')!;loaded.P.x=door.x;loaded.P.y=door.y;assert(!loaded.useRoute(-1));
+for(const r of ROUTES){const reverse=ROUTES.find(q=>q.x===r.to.x&&q.y===r.to.y&&q.to.x===r.x&&q.to.y===r.y);assert(reverse,'Each door must return through its paired endpoint');}
+console.log('PASS: directional climbing stays separate from interaction; all doors return through the same paired doorway.');

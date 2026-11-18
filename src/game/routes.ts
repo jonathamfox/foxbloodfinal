@@ -15,7 +15,12 @@ pair('ruas_esgoto',floor(1220),floor(2250),'Descer aos esgotos','Voltar às ruas
 pair('esgoto_cripta',floor(2390),floor(3970),'Galeria para os subsolos','Voltar aos esgotos');
 pair('cripta_ruas',floor(4160),floor(5650),'Escadaria para a praça','Descer aos subsolos');
 pair('catedral',floor(5850),floor(ZONE+1800),'Aqueduto da Catedral','Voltar a Velmora',0);
-pair('retorno',floor(ZONE+5750),floor(820),'Elevador para Velmora','Elevador para a Catedral',0);
+for(let z=1;z<9;z++) {
+  if(z===6)continue; // The castle crypt already links this pair.
+  pair('region_'+z,floor(z*ZONE+5800),floor((z+1)*ZONE+1250),`Passagem para ${['','','o Salão Real','o Lago','o Altar Astral','o Bosque','o Castelo','','o Coro','o Sótão'][z+1]}`, 'Retornar pela mesma porta',z);
+}
+pair('lake_return',floor(3*ZONE+5570),floor(1550),'Canal de retorno a Velmora','Canal para o Lago',2);
+pair('royal_crypt',floor(2*ZONE+5350),floor(6*ZONE+1500),'Cripta da nobreza','Retornar ao Salão Real',5);
 pair('ossuario',floor(ZONE+5900),floor(7*ZONE+5700),'Galeria do Ossuário','Retornar à Catedral',6);
 pair('castelo',floor(6*ZONE+5800),floor(7*ZONE+2100),'Criptas sob o castelo','Escadaria do castelo',6);
 export const routeAvailable=(r:Route,dead:boolean[])=>r.requires<0||Array.from({length:r.requires+1},(_,i)=>dead[i]).every(Boolean);
@@ -45,7 +50,7 @@ export function drawRouteHint(c:CanvasRenderingContext2D,P:Player,S:SaveStats,to
   const r=nearbyRoute(P);if(!r)return;
   c.save();c.fillStyle='rgba(5,12,16,.92)';c.fillRect(W/2-240,80,480,48);
   c.fillStyle='#b8e1d6';c.font='16px Georgia';c.textAlign='center';
-  c.fillText(routeAvailable(r,S.dead)?`${touch?'Usar':'E / ↑ / ↓'} · ${r.label}`:'Passagem selada pelos guardiões anteriores',W/2,109,460);c.restore();
+  c.fillText(routeAvailable(r,S.dead)?`${r.kind==='ladder'?(touch?'Direcional ↑ / ↓':'↑ / ↓'):(touch?'Ação no direcional':'E')} · ${r.label}`:'Passagem selada pelos guardiões anteriores',W/2,109,460);c.restore();
 }
 // World-space interiors sit behind combat silhouettes. Platforms remain readable.
 export function drawUnderground(c:CanvasRenderingContext2D,cam:number,time:number) {

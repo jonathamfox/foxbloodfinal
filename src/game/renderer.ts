@@ -1,3 +1,4 @@
+import { drawAtmosphere, drawWeaponArc, drawPassage, drawRegionVeil } from './polish';
 import { drawRoutes, drawRouteHint, drawUnderground } from './routes';
 import { drawDepthBack, drawDepthFloor, drawDepthFront, drawRuins, drawPuzzleWorld, drawPuzzleHint } from './depth';
 import type { Breakable } from './expansion';
@@ -2842,6 +2843,7 @@ export interface RenderState {
   nearNpc?: NpcDef | null;
   npcs?: { def: NpcDef; status: QuestStatus; ready?: boolean }[];
   zoneTrans?: ZoneTransition | null;
+  passage?: {t:number;label:string}|null;
   maxHp: number;
   maxSt: number;
   maxFlasks: number;
@@ -3330,6 +3332,7 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
   }
 
   drawUnderground(ctx, cam, time);
+  drawAtmosphere(ctx,cam,time,zIdx,reduceMotion);
 
   // Ground
   const gTop = lerpHex(tA.groundTop, tB.groundTop, blend);
@@ -3752,14 +3755,18 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
     if (P.state === 'atk') {
       const { aw, aa, ar, t } = P;
       const [a0, a1] = P.heavy ? [-2.6, 1.2] : P.combo === 2 ? [1, -1.9] : [-2.2, 1];
-      if (t < aw) pose.arm = lerp(0.9, a0, t / aw);
+      if (t < aw) pose.arm = lerp(0.9, a0, Math.pow(t / aw, .65));
       else if (t < aw + aa) {
-        pose.arm = lerp(a0, a1, (t - aw) / aa);
+        pose.arm = lerp(a0, a1, 1-Math.pow(1-(t-aw)/aa,2));
         pose.trail = [a0, pose.arm];
       } else {
-        pose.arm = lerp(a1, 0.9, Math.min(1, (t - aw - aa) / ar));
+        const settle=Math.min(1,(t-aw-aa)/ar);
+        pose.arm = lerp(a1, 0.9, settle*settle*(3-2*settle));
       }
-      pose.lean = P.heavy ? 0.12 : 0.06;
+      const swing=t<aw?-Math.sin(t/aw*Math.PI/2):t<aw+aa?Math.sin((t-aw)/aa*Math.PI/2):Math.max(0,1-(t-aw-aa)/ar);
+      pose.lean=swing*(P.heavy?.22:.13);
+      pose.arm2=1.1-swing*.65;
+      pose.sway=swing*.85;
     } else if (P.state === 'roll') pose.roll = (P.t / RDUR) * Math.PI * 2;
     else if (P.state === 'heal') {
       pose.arm = 0.6;
@@ -3791,6 +3798,7 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
       ctx.restore();
     }
 
+    drawWeaponArc(ctx,P,look,reduceMotion);
     const foxScale = 1.28;
     ctx.save();
     ctx.translate(P.x, P.y);
@@ -4698,51 +4706,8 @@ export function renderScene(ctx: CanvasRenderingContext2D, rs: number, st: Rende
 
   if(mode==='play' && !P.dead) {drawPuzzleHint(ctx, P, S, isTouch);drawRouteHint(ctx,P,S,isTouch);}
 
-  // Animated Region Transition Overlay (cinematic curtain sweep + region crest)
-  if (st.zoneTrans && mode === 'play') {
-    const tr = st.zoneTrans;
-    const p = clamp(tr.t / tr.dur, 0, 1);
-    const fade = p < 0.2 ? p / 0.2 : p > 0.78 ? (1 - p) / 0.22 : 1;
-    const barH = 48 * fade;
-    const romans = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-    ctx.save();
-    // Cinematic letterbox curtains
-    ctx.fillStyle = `rgba(6, 7, 9, ${0.88 * fade})`;
-    ctx.fillRect(0, 0, W, barH);
-    ctx.fillRect(0, H - barH, W, barH);
-
-    // Subtle veil wash
-    ctx.fillStyle = `rgba(10, 12, 16, ${0.28 * fade})`;
-    ctx.fillRect(0, barH, W, H - barH * 2);
-
-    ctx.globalAlpha = fade;
-    const crestY = H * 0.34;
-    // Decorative ornamental dividers
-    ctx.strokeStyle = tr.col;
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(W / 2 - 220 * fade, crestY);
-    ctx.lineTo(W / 2 - 38, crestY);
-    ctx.moveTo(W / 2 + 38, crestY);
-    ctx.lineTo(W / 2 + 220 * fade, crestY);
-    ctx.stroke();
-
-    ctx.textAlign = 'center';
-    ctx.font = `14px ${FONT_D}`;
-    ctx.fillStyle = tr.col;
-    ctx.fillText(`REGIÃO ${romans[tr.toZone] || tr.toZone + 1}`, W / 2, crestY + 5);
-
-    ctx.font = `44px ${FONT_D}`;
-    ctx.fillStyle = '#e8dcc8';
-    ctx.fillText(tr.title, W / 2, crestY + 52);
-
-    if (tr.subtitle) {
-      ctx.font = `italic 18px ${FONT_B}`;
-      ctx.fillStyle = '#a8b0ac';
-      ctx.fillText(tr.subtitle, W / 2, crestY + 82);
-    }
-    ctx.restore();
-  }
+  if(st.zoneTrans&&mode==='play') drawRegionVeil(ctx,st.zoneTrans,reduceMotion);
+  if(st.passage&&mode==='play') drawPassage(ctx,st.passage);
 
   // Banner
   if (st.banner) {
