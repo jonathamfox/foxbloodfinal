@@ -29,7 +29,10 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
     const dx = Math.max(-1, Math.min(1, (e.clientX - r.left - r.width / 2) / 40));
     const dy = Math.max(-1, Math.min(1, (e.clientY - r.top - r.height / 2) / 40));
     knob.style.transform = `translate(${dx * 34}px, ${dy * 34}px)`;
-    onMove(dx < -0.3, dx > 0.3);
+    const vertical=Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>.5;
+    onMove(!vertical&&dx < -0.3, !vertical&&dx > 0.3);
+    onKey('climbUp',vertical&&dy<-.5);
+    onKey('climbDown',vertical&&dy>.5);
   };
 
   const handleStickEnd = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -37,26 +40,27 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
     pointerIdRef.current = null;
     if (knobRef.current) knobRef.current.style.transform = '';
     onMove(false, false);
+    onKey("climbUp",false);onKey("climbDown",false);
   };
 
   const bindBtn = (k: string) => ({
     onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
-      e.preventDefault();
+      e.preventDefault();e.stopPropagation();
       e.currentTarget.classList.add('on');
       onKey(k, true);
     },
     onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      e.currentTarget.classList.remove('on');
+      e.preventDefault();e.stopPropagation();
+      e.stopPropagation();e.currentTarget.classList.remove('on');
       onKey(k, false);
     },
     onPointerCancel: (e: React.PointerEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      e.currentTarget.classList.remove('on');
+      e.preventDefault();e.stopPropagation();
+      e.stopPropagation();e.currentTarget.classList.remove('on');
       onKey(k, false);
     },
     onPointerLeave: (e: React.PointerEvent<HTMLButtonElement>) => {
-      e.currentTarget.classList.remove('on');
+      e.stopPropagation();e.currentTarget.classList.remove('on');
       onKey(k, false);
     },
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
@@ -109,7 +113,9 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
         >
           <i>◀</i>
           <i>▶</i>
+          <span className="stick-up" aria-hidden="true">▲</span><span className="stick-down" aria-hidden="true">▼</span>
           <div ref={knobRef} className="knob" />
+          <button type="button" className="stick-action" aria-label="Ação: portas, baús e conversar" {...bindBtn('use')}>E<span>AÇÃO</span></button>
         </div>
 
         <div className="acts">
@@ -126,11 +132,6 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
           <button type="button" className="b-heavy" aria-label="Golpe forte" {...bindBtn('heavy')}>
             <svg viewBox="0 0 24 24">
               <path d="M7 17L19 5v4M19 5h-4M4 14l6 6M5 19l2-2" />
-            </svg>
-          </button>
-          <button type="button" className="b-use" aria-label="Usar escada ou passagem" {...bindBtn('use')}>
-            <svg viewBox="0 0 24 24">
-              <path d="M5 21V3M19 21V3M5 6h14M5 12h14M5 18h14" />
             </svg>
           </button>
           <button

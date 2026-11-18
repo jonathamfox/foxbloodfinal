@@ -191,9 +191,10 @@ export const TitleSheet: React.FC<TitleSheetProps> = ({
             </dd>
             <dt className="font-display text-[var(--bone)]">Q</dt>
             <dd className="m-0 text-[var(--mist)]">beber um frasco de brasa (cura e purifica status)</dd>
-            <dt className="font-display text-[var(--bone)]">E</dt>
+            <dt className="font-display text-[var(--bone)]">↑ / ↓</dt><dd className="m-0 text-[var(--mist)]">subir / descer escadas pelo direcional</dd>
+            <dt className="font-display text-[var(--bone)]">E / Ação central</dt>
             <dd className="m-0 text-[var(--mist)]">
-              subir escadas, atravessar passagens, falar, abrir baús e descansar
+              atravessar a mesma porta para entrar ou voltar; falar, abrir baús e descansar
             </dd>
           </dl>
         </div>
