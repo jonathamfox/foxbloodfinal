@@ -1,3 +1,4 @@
+import { ROUTES, routeAvailable } from '../game/routes';
 import React, { useMemo } from 'react';
 import { Compass, Eye, EyeOff } from 'lucide-react';
 import { EXPLORE_BINS, getKarmaAlignment, NZ, ZONE } from '../game/constants';
@@ -185,6 +186,11 @@ export const MiniMap: React.FC<MiniMapProps> = ({ snapshot, collapsed, onToggleC
             />
           ))}
 
+          {ROUTES.filter(r=>r.x>=zoneStart&&r.x<zoneStart+ZONE&&isWorldXExplored(r.x)).map(r=>(
+            <g key={r.id}><title>{r.label}</title>
+              <circle cx={toMapX(r.x-zoneStart)} cy={toMapY(r.y)-4} r={r.kind==='ladder'?1.5:2.5} fill={routeAvailable(r,bossesDead)?'#78c8b5':'#a77851'} />
+            </g>
+          ))}
           {/* Boss Fog Gate Divider */}
           <line
             x1={arenaX}

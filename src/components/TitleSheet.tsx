@@ -65,9 +65,7 @@ export const TitleSheet: React.FC<TitleSheetProps> = ({
               Fox Borne
             </h1>
             <p className="m-0 text-[var(--mist)] italic max-w-[54ch]">
-              Explore ruínas em profundidade, quebre objetos e descubra três criptas com enigmas. Chefes deixam conjuntos exclusivos; cada NG+ traz novas variantes. O sino tocou à meia-noite e ninguém acordou igual. Escolha sua vocação, forje seu Karma
-              em pactos com viajantes, reúna armas e crônicas pelas dez regiões e derrube os doze
-              horrores de Velmora.
+              Ruas, esgotos e subsolos ligados por escadas e passagens. Sem pulo ou escudo: controle a estamina e esquive. Descubra enigmas, enfrente doze chefes e conquiste suas relíquias.
             </p>
           </div>
 
@@ -151,9 +149,9 @@ export const TitleSheet: React.FC<TitleSheetProps> = ({
 
               <div className="flex flex-col gap-1">
                 <span className="font-display text-xs tracking-[0.06em] uppercase text-[var(--bone)]">
-                  Armadura &amp; Escudo
+                  Armadura
                 </span>
-                {unlockedArmors.length > 1 || unlockedShields.length > 1 ? (
+                {unlockedArmors.length > 1 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {unlockedArmors.map((aId) => (
                       <button
@@ -166,25 +164,11 @@ export const TitleSheet: React.FC<TitleSheetProps> = ({
                         {ARMORS[aId].label}
                       </button>
                     ))}
-                    {unlockedShields.map((sId) => {
-                      const s = SHIELDS.find((x) => x.id === sId) || SHIELDS[0];
-                      return (
-                        <button
-                          key={sId}
-                          type="button"
-                          className="gothic-btn gothic-choice text-xs py-1 px-2 flex items-center gap-1"
-                          aria-pressed={look.shield === sId}
-                          onClick={() => onSelectShield(sId)}
-                        >
-                          <Shield className="w-3 h-3" />
-                          {s.label}
-                        </button>
-                      );
-                    })}
+                    
                   </div>
                 ) : (
                   <div className="text-sm text-[var(--ember)]">
-                    {currentArmor.label} · {currentShield.label}
+                    {currentArmor.label}
                   </div>
                 )}
                 <span className="text-xs text-[var(--mist)] italic">{currentArmor.desc}</span>
@@ -195,25 +179,21 @@ export const TitleSheet: React.FC<TitleSheetProps> = ({
           <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-5 gap-y-1 text-[14px] border-t border-[var(--line)] pt-3">
             <dt className="font-display text-[var(--bone)]">A / D ou setas</dt>
             <dd className="m-0 text-[var(--mist)]">andar</dd>
-            <dt className="font-display text-[var(--bone)]">Espaço ou W</dt>
-            <dd className="m-0 text-[var(--mist)]">pular</dd>
             <dt className="font-display text-[var(--bone)]">J / K</dt>
             <dd className="m-0 text-[var(--mist)]">ataque rápido e ataque forte (corpo a corpo, flechas, magia ou piromancia)</dd>
             <dt className="font-display text-[var(--bone)]">F</dt>
             <dd className="m-0 text-[var(--mist)]">alternar tipo de magia ou piromancia (com cajado ou chama equipada)</dd>
             <dt className="font-display text-[var(--bone)]">C</dt>
             <dd className="m-0 text-[var(--mist)]">especial da build quando a carga atingir 100%</dd>
-            <dt className="font-display text-[var(--bone)]">L ou Shift</dt>
+            <dt className="font-display text-[var(--bone)]">Espaço / L / Shift</dt>
             <dd className="m-0 text-[var(--mist)]">
               rolar (i-frames etéreos; esquiva perfeita concede +35% de contra-golpe)
             </dd>
-            <dt className="font-display text-[var(--bone)]">I ou S (segurar)</dt>
-            <dd className="m-0 text-[var(--mist)]">erguer escudo; erga no instante do golpe para aparar</dd>
             <dt className="font-display text-[var(--bone)]">Q</dt>
             <dd className="m-0 text-[var(--mist)]">beber um frasco de brasa (cura e purifica status)</dd>
             <dt className="font-display text-[var(--bone)]">E</dt>
             <dd className="m-0 text-[var(--mist)]">
-              falar com viajantes, abrir baús, ler obeliscos, descansar no braseiro ou cruzar a névoa
+              subir escadas, atravessar passagens, falar, abrir baús e descansar
             </dd>
           </dl>
         </div>

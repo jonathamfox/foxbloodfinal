@@ -116,7 +116,7 @@ export const PauseSheet: React.FC<PauseSheetProps> = ({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-display text-xs tracking-[0.06em] uppercase text-[var(--bone)]">
-                Armaduras &amp; Escudos
+                Armaduras
               </span>
               <span className="text-xs text-[var(--mist)] italic">{ARMORS[restData.armor].desc}</span>
             </div>
@@ -132,20 +132,7 @@ export const PauseSheet: React.FC<PauseSheetProps> = ({
                   {ARMORS[aId].label}
                 </button>
               ))}
-              {restData.unlockedShields.map((sId) => {
-                const sh = SHIELDS.find((x) => x.id === sId) || SHIELDS[0];
-                return (
-                  <button
-                    key={sId}
-                    type="button"
-                    className="gothic-btn gothic-choice text-xs py-1 px-2.5"
-                    aria-pressed={restData.shield === sId}
-                    onClick={() => onSelectShield(sId)}
-                  >
-                    {sh.label}
-                  </button>
-                );
-              })}
+              
             </div>
           </div>
         </div>

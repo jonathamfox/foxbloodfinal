@@ -322,33 +322,7 @@ export const RestSheet: React.FC<RestSheetProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="text-sm font-display text-[var(--bone)]">
-                  Escudos ({data.unlockedShields.length}/{SHIELDS.length})
-                </span>
-                <span className="text-xs text-[var(--mist)] italic">{eqShield.desc}</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {SHIELDS.map((s) => {
-                  const unlocked = data.unlockedShields.includes(s.id);
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      disabled={!unlocked}
-                      className="gothic-btn gothic-choice text-xs py-1.5 px-2.5 flex items-center gap-1.5 disabled:opacity-45 disabled:cursor-not-allowed"
-                      aria-pressed={data.shield === s.id}
-                      title={unlocked ? s.desc : 'Escudo oculto em algum baú de Velmora'}
-                      onClick={() => unlocked && onSelectShield(s.id)}
-                    >
-                      {!unlocked && <Lock className="w-3 h-3 opacity-70" />}
-                      {unlocked ? s.label : '??? · Escudo'}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+
           </div>
         )}
 

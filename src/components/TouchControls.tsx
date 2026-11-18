@@ -123,19 +123,14 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
               <path d="M5 6l6 6-6 6M13 6l6 6-6 6" />
             </svg>
           </button>
-          <button type="button" className="b-jump" aria-label="Pular" {...bindBtn('jump')}>
-            <svg viewBox="0 0 24 24">
-              <path d="M6 13l6-6 6 6M6 19l6-6 6 6" />
-            </svg>
-          </button>
           <button type="button" className="b-heavy" aria-label="Golpe forte" {...bindBtn('heavy')}>
             <svg viewBox="0 0 24 24">
               <path d="M7 17L19 5v4M19 5h-4M4 14l6 6M5 19l2-2" />
             </svg>
           </button>
-          <button type="button" className="sm b-use" aria-label="Usar braseiro" {...bindBtn('use')}>
+          <button type="button" className="b-use" aria-label="Usar escada ou passagem" {...bindBtn('use')}>
             <svg viewBox="0 0 24 24">
-              <path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z" />
+              <path d="M5 21V3M19 21V3M5 6h14M5 12h14M5 18h14" />
             </svg>
           </button>
           <button
@@ -148,11 +143,6 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
             <svg viewBox="0 0 24 24">
               <path d="M12 3a9 9 0 1 1-6.4 2.6M5.6 2.5v3.6h3.6" />
               <circle cx="12" cy="12" r="2.2" fill="currentColor" />
-            </svg>
-          </button>
-          <button type="button" className="sm b-block" aria-label="Escudo" {...bindBtn('block')}>
-            <svg viewBox="0 0 24 24">
-              <path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" />
             </svg>
           </button>
           <button type="button" className="sm b-heal" aria-label="Frasco" {...bindBtn('heal')}>
