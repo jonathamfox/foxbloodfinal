@@ -388,3 +388,9 @@ canvas#game {
     display: flex;
   }
 }
+
+/* Keep the interaction button fixed in the centre while the thumb ring moves. */
+.touch .stick-action {left:50%;top:50%;margin:-23px 0 0 -23px;width:46px;height:46px;z-index:2;font:18px Georgia;background:#172328e8;border-color:#b39b72;display:flex;flex-direction:column;justify-content:center;gap:1px;}
+.stick-action span {font:8px sans-serif;letter-spacing:1px;pointer-events:none;}
+.stick-up,.stick-down {position:absolute;left:50%;transform:translateX(-50%);font-size:13px;color:#c5c9b5;pointer-events:none;}
+.stick-up {top:7px}.stick-down {bottom:7px}

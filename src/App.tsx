@@ -213,7 +213,7 @@ function Game() {
           <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">Q</b> frasco
         </span>
         <span>
-          <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">E</b> escadas / passagens / usar
+          <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">E</b> portas / ação · ↑ ↓ escadas
         </span>
         <span>
           <b className="font-display font-normal text-[var(--bone)] tracking-[0.04em]">M</b> mapa
