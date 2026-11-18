@@ -115,10 +115,10 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
           <i>▶</i>
           <span className="stick-up" aria-hidden="true">▲</span><span className="stick-down" aria-hidden="true">▼</span>
           <div ref={knobRef} className="knob" />
-          <button type="button" className="stick-action" aria-label="Ação: portas, baús e conversar" {...bindBtn('use')}>E<span>AÇÃO</span></button>
         </div>
 
         <div className="acts">
+          <button type="button" className="b-use" aria-label="Ação: portas, baús e conversar" {...bindBtn('use')}>AÇÃO</button>
           <button type="button" className="b-atk" aria-label="Golpe" {...bindBtn('atk')}>
             <svg viewBox="0 0 24 24">
               <path d="M4 18C10 17 17 11 19 4c1 8-5 15-15 14z" fill="currentColor" />
@@ -136,14 +136,13 @@ export const TouchControls: React.FC<TouchControlsProps> = ({
           </button>
           <button
             type="button"
-            className={`sm b-special ${specialReady ? 'ready' : ''}`}
+            className={`b-special ${specialReady ? 'ready' : ''}`}
             style={{ '--energy': `${energy}%` } as React.CSSProperties}
             aria-label={specialReady ? 'Especial pronto' : `Especial ${energy}%`}
             {...bindBtn('special')}
           >
             <svg viewBox="0 0 24 24">
-              <path d="M12 3a9 9 0 1 1-6.4 2.6M5.6 2.5v3.6h3.6" />
-              <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+              <path d="M6 18L19 5l-1 5-8 8M4 14l6 6M4 20l3-3" />
             </svg>
           </button>
           <button type="button" className="sm b-heal" aria-label="Frasco" {...bindBtn('heal')}>
