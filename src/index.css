@@ -198,7 +198,7 @@ canvas#game {
 
 .acts {
   position: relative;
-  width: 220px;
+  width: 310px;
   height: 220px;
   flex: none;
   pointer-events: none;
@@ -269,13 +269,17 @@ canvas#game {
 }
 
 .touch .b-use {
-  right: 83px;
-  bottom: 85px;
+  right: 177px;
+  bottom: 9px;
+  font: 15px var(--display);
+  border-color: var(--ember);
+  color: #ffe2a6;
+  box-shadow: 0 0 12px rgba(217, 119, 47, 0.4), inset 0 0 10px rgba(217, 119, 47, 0.12);
 }
 
 .touch .b-special {
-  right: 162px;
-  bottom: 82px;
+  right: 252px;
+  bottom: 9px;
   border-color: rgba(140, 205, 224, 0.72);
   background: conic-gradient(rgba(116, 197, 209, 0.42) var(--energy, 40%), rgba(10, 16, 22, 0.72) 0);
 }
@@ -389,8 +393,5 @@ canvas#game {
   }
 }
 
-/* Keep the interaction button fixed in the centre while the thumb ring moves. */
-.touch .stick-action {left:50%;top:50%;margin:-23px 0 0 -23px;width:46px;height:46px;z-index:2;font:18px Georgia;background:#172328e8;border-color:#b39b72;display:flex;flex-direction:column;justify-content:center;gap:1px;}
-.stick-action span {font:8px sans-serif;letter-spacing:1px;pointer-events:none;}
 .stick-up,.stick-down {position:absolute;left:50%;transform:translateX(-50%);font-size:13px;color:#c5c9b5;pointer-events:none;}
 .stick-up {top:7px}.stick-down {bottom:7px}
